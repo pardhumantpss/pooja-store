@@ -1,0 +1,6 @@
+{
+  "name": "Aura Commerce",
+  "description": "Modern eCommerce store with real-time inventory tracking, multi-category navigation, and secure encrypted checkout.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
