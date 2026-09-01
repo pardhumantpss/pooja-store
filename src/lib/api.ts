@@ -1,4 +1,4 @@
-import { Category, FilterState, Order, Product, StoreStats } from '../types';
+import { Category, FilterState, Order, Product, StoreStats, UserProfile, UserRole, StoreProfitSummary, SystemNotification } from '../types';
 
 export const api = {
   async getCategories(): Promise<Category[]> {
@@ -27,6 +27,80 @@ export const api = {
   async getProductById(id: string): Promise<Product> {
     const res = await fetch(`/api/products/${id}`);
     if (!res.ok) throw new Error('Failed to fetch product');
+    return res.json();
+  },
+
+  async createProduct(product: Partial<Product>): Promise<{ success: boolean; message: string; product: Product; totalCount: number }> {
+    const res = await fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(product),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to create product');
+    return data;
+  },
+
+  async updateProduct(id: string, updates: Partial<Product>): Promise<{ success: boolean; message: string; product: Product }> {
+    const res = await fetch(`/api/products/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update product');
+    return data;
+  },
+
+  async deleteProduct(id: string, reason?: string, deletedBy?: string): Promise<{ success: boolean; message: string; archivedItem: import('../types').ArchivedProduct; remainingCount: number }> {
+    const res = await fetch(`/api/products/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason, deletedBy }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to delete product');
+    return data;
+  },
+
+  async bulkDeleteProducts(productIds: string[], reason?: string, deletedBy?: string): Promise<{ success: boolean; message: string; deletedCount: number; totalUnitsRemoved: number; totalValueLost: number; remainingCount: number }> {
+    const res = await fetch('/api/products/bulk-delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productIds, reason, deletedBy }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to bulk delete products');
+    return data;
+  },
+
+  async getArchivedProducts(): Promise<{ archivedProducts: import('../types').ArchivedProduct[]; count: number }> {
+    const res = await fetch('/api/products/archived');
+    if (!res.ok) throw new Error('Failed to fetch archived products');
+    return res.json();
+  },
+
+  async restoreProduct(id: string): Promise<{ success: boolean; message: string; restoredProduct: Product; activeCount: number; archivedCount: number }> {
+    const res = await fetch(`/api/products/${id}/restore`, {
+      method: 'POST',
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to restore product');
+    return data;
+  },
+
+  async purgeProduct(id: string): Promise<{ success: boolean; message: string; archivedCount: number }> {
+    const res = await fetch(`/api/products/${id}/purge`, {
+      method: 'POST',
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to purge product');
+    return data;
+  },
+
+  async getDeletionLogs(): Promise<import('../types').ProductDeletionLog[]> {
+    const res = await fetch('/api/products/deletion-log');
+    if (!res.ok) throw new Error('Failed to fetch deletion logs');
     return res.json();
   },
 
@@ -118,6 +192,187 @@ export const api = {
     });
     if (!res.ok) throw new Error('Failed to submit review');
     return res.json();
+  },
+
+  // Auth & Account
+  async getCurrentUser(): Promise<UserProfile> {
+    const res = await fetch('/api/auth/current-user');
+    if (!res.ok) throw new Error('Failed to fetch current user');
+    return res.json();
+  },
+
+  async register(payload: { name: string; email: string; password?: string; phone?: string; role?: UserRole }): Promise<{ success: boolean; message: string; user: UserProfile }> {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Registration failed');
+    return data;
+  },
+
+  async login(payload: { email: string; password?: string; role?: UserRole }): Promise<{ success: boolean; message: string; user: UserProfile }> {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+    return data;
+  },
+
+  async logout(): Promise<{ success: boolean; user: UserProfile }> {
+    const res = await fetch('/api/auth/logout', { method: 'POST' });
+    if (!res.ok) throw new Error('Logout failed');
+    return res.json();
+  },
+
+  async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
+    const res = await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to request reset');
+    return data;
+  },
+
+  // Real-time Payment Gateway Methods
+  async createPaymentIntent(payload: {
+    amount: number;
+    currency?: string;
+    paymentMethod: string;
+    itemsCount?: number;
+  }): Promise<{ success: boolean; intent: import('../types').PaymentGatewayIntent }> {
+    const res = await fetch('/api/payment/create-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to create payment intent');
+    return data;
+  },
+
+  async verifyPaymentOtp(payload: {
+    otp: string;
+    intentId?: string;
+    type?: string;
+  }): Promise<{ success: boolean; verified: boolean; message: string; authorizationCode?: string }> {
+    const res = await fetch('/api/payment/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'OTP Verification failed');
+    return data;
+  },
+
+  async simulateUpiAppScan(intentId: string): Promise<{ success: boolean; message: string }> {
+    const res = await fetch('/api/payment/simulate-qr-scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ intentId }),
+    });
+    return res.json();
+  },
+
+  async getPaymentStatus(intentId: string): Promise<{ success: boolean; intent: any }> {
+    const res = await fetch(`/api/payment/status/${intentId}`);
+    return res.json();
+  },
+
+  async getUsers(): Promise<UserProfile[]> {
+    const res = await fetch('/api/auth/users');
+    if (!res.ok) throw new Error('Failed to fetch users');
+    return res.json();
+  },
+
+  async switchRole(role: UserRole, customUser?: Partial<UserProfile>): Promise<{ success: boolean; user: UserProfile }> {
+    const res = await fetch('/api/auth/switch-role', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, customUser }),
+    });
+    if (!res.ok) throw new Error('Failed to switch role');
+    return res.json();
+  },
+
+  // Profitability Analytics
+  async getProductProfitability(): Promise<StoreProfitSummary> {
+    const res = await fetch('/api/analytics/product-profitability');
+    if (!res.ok) throw new Error('Failed to fetch profitability analytics');
+    return res.json();
+  },
+
+  async simulatePriceMargin(payload: {
+    productId: string;
+    simulatedPrice?: number;
+    simulatedCostPrice?: number;
+    simulatedVolumeBoost?: number;
+  }) {
+    const res = await fetch('/api/analytics/simulate-price-margin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Failed to simulate pricing');
+    return res.json();
+  },
+
+  // Notifications & Malfunction Alerts
+  async getNotifications(role?: string): Promise<SystemNotification[]> {
+    const url = role ? `/api/notifications?role=${encodeURIComponent(role)}` : '/api/notifications';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch notifications');
+    return res.json();
+  },
+
+  async markNotificationsRead(id?: string): Promise<{ success: boolean; count: number }> {
+    const res = await fetch('/api/notifications/mark-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) throw new Error('Failed to mark notifications read');
+    return res.json();
+  },
+
+  async triggerMalfunction(payload: { type: string; customMessage?: string; severity?: string }) {
+    const res = await fetch('/api/notifications/trigger-malfunction', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Failed to trigger malfunction');
+    return res.json();
+  },
+
+  async resolveMalfunction(id?: string) {
+    const res = await fetch('/api/notifications/resolve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) throw new Error('Failed to resolve malfunction');
+    return res.json();
+  },
+
+  async getSystemHealth(): Promise<{
+    status: 'healthy' | 'degraded' | 'critical';
+    gatewayStatus: string;
+    gatewayLatencyMs: number;
+    uptimePercent: number;
+    activeMalfunctionsCount: number;
+    lastHeartbeat: string;
+  }> {
+    const res = await fetch('/api/system/health');
+    if (!res.ok) throw new Error('Failed to fetch system health');
+    return res.json();
   }
 };
 
@@ -140,3 +395,4 @@ export const resetInventory = async (): Promise<Product[]> => {
   const data = await res.json();
   return data.products;
 };
+

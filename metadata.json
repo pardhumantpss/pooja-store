@@ -1,6 +1,6 @@
 {
-  "name": "Aura Commerce",
-  "description": "Modern eCommerce store with real-time inventory tracking, multi-category navigation, and secure encrypted checkout.",
+  "name": "Pooja Store",
+  "description": "Premium e-commerce store with real-time inventory tracking, multi-gateway payments, role-based operations, and intelligent product profitability analytics.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

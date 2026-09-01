@@ -979,6 +979,116 @@ export const INITIAL_PRODUCTS: Product[] = [
   }
 ];
 
+export const DEMO_USERS: { [key: string]: import('../types').UserProfile } = {
+  admin: {
+    id: 'usr-admin-01',
+    name: 'Pooja Sharma',
+    email: 'pooja.sharma@poojastore.com',
+    role: 'admin',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    department: 'Store Owner & Executive Director',
+    phone: '+91 98201 44589',
+    badge: 'Store Owner',
+    permissions: ['all', 'manage_inventory', 'manage_pricing', 'view_financials', 'manage_system', 'trigger_alerts']
+  },
+  analyst: {
+    id: 'usr-analyst-02',
+    name: 'Aarav Patel',
+    email: 'aarav.patel@poojastore.com',
+    role: 'analyst',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+    department: 'Financial & Revenue Intelligence',
+    phone: '+91 98112 33490',
+    badge: 'Financial Analyst',
+    permissions: ['view_financials', 'export_reports', 'simulate_pricing', 'view_inventory']
+  },
+  inventory_manager: {
+    id: 'usr-inv-03',
+    name: 'Vikram Mehta',
+    email: 'vikram.mehta@poojastore.com',
+    role: 'inventory_manager',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+    department: 'Central Warehouse & Supply Chain',
+    phone: '+91 98334 77123',
+    badge: 'Inventory Officer',
+    permissions: ['manage_inventory', 'restock', 'sku_management', 'view_orders']
+  },
+  customer: {
+    id: 'usr-cust-04',
+    name: 'Riya Sen',
+    email: 'riya.sen@example.com',
+    role: 'customer',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+    department: 'VIP Club Member',
+    phone: '+91 98765 12340',
+    badge: 'Verified Buyer',
+    permissions: ['place_orders', 'view_own_orders', 'leave_reviews', 'track_shipments']
+  }
+};
+
+export const INITIAL_NOTIFICATIONS: import('../types').SystemNotification[] = [
+  {
+    id: 'notif-01',
+    type: 'transaction',
+    severity: 'success',
+    title: 'Order Confirmed: #AUR-9821-9382',
+    message: 'Payment of $376.92 authorized via 3D-Secure Encrypted Gateway. Dispatched to warehouse.',
+    timestamp: '15 mins ago',
+    read: false,
+    targetRole: 'all',
+    metadata: {
+      orderId: 'ord-9821',
+      orderNumber: 'AUR-9821-9382',
+      amount: 376.92,
+      txId: 'tx_sec_99482710384'
+    }
+  },
+  {
+    id: 'notif-02',
+    type: 'financial',
+    severity: 'info',
+    title: 'High Profit Margin Alert: Horizon Studio Headphones',
+    message: 'Horizon Studio generated $42,229 in cumulative gross profit with 59.9% margin (Top Benefiting Product).',
+    timestamp: '1 hour ago',
+    read: false,
+    targetRole: 'admin',
+    metadata: {
+      productId: 'prod-01',
+      productTitle: 'Aura Horizon Studio ANC Headphones',
+      amount: 42229
+    }
+  },
+  {
+    id: 'notif-03',
+    type: 'stock_alert',
+    severity: 'warning',
+    title: 'Low Stock Warning: Vanguard Chrono Watch',
+    message: 'Only 4 units remaining in stock. Reorder trigger reached at warehouse SKU VAN-WT-700.',
+    timestamp: '2 hours ago',
+    read: false,
+    targetRole: 'inventory_manager',
+    metadata: {
+      productId: 'prod-02',
+      productTitle: 'Vanguard Chrono Smartwatch Titanium'
+    }
+  },
+  {
+    id: 'notif-04',
+    type: 'malfunction',
+    severity: 'critical',
+    title: 'Gateway Webhook Latency Spike Detected',
+    message: 'Payment Gateway Bank-B response latency peaked at 1.8s. Self-healing fallback circuit routed transactions to secondary gateway successfully.',
+    timestamp: '3 hours ago',
+    read: false,
+    targetRole: 'admin',
+    isResolved: true,
+    metadata: {
+      errorCode: 'GW_LATENCY_HEALED',
+      recoveryAction: 'Auto-switched to High-Throughput Redundant Gateway'
+    }
+  }
+];
+
 export const MOCK_REVIEWS_POOL = [
   {
     id: 'r-1',

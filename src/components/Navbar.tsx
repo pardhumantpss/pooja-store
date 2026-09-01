@@ -13,9 +13,21 @@ import {
   X,
   ArrowRight,
   TrendingUp,
-  Activity
+  Activity,
+  Bell,
+  User,
+  Crown,
+  AlertTriangle,
+  BarChart3,
+  Volume2,
+  VolumeX,
+  LogIn,
+  UserPlus,
+  Package,
+  Trash2
 } from 'lucide-react';
-import { Category, Product } from '../types';
+import { Category, Product, UserProfile, PageView } from '../types';
+import { soundFx } from '../lib/soundFx';
 
 interface NavbarProps {
   categories: Category[];
@@ -33,6 +45,15 @@ interface NavbarProps {
   allProducts: Product[];
   onSelectProduct: (product: Product) => void;
   liveInventoryActive: boolean;
+  currentUser: UserProfile | null;
+  onOpenRoleSwitcher: () => void;
+  onOpenProfitAnalytics: () => void;
+  onOpenNotifications: () => void;
+  onOpenAuthModal?: () => void;
+  unreadNotificationsCount?: number;
+  activeMalfunctionsCount?: number;
+  currentPage?: PageView;
+  onNavigate?: (page: PageView) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -51,11 +72,27 @@ export const Navbar: React.FC<NavbarProps> = ({
   allProducts,
   onSelectProduct,
   liveInventoryActive,
+  currentUser,
+  onOpenRoleSwitcher,
+  onOpenProfitAnalytics,
+  onOpenNotifications,
+  onOpenAuthModal,
+  unreadNotificationsCount = 0,
+  activeMalfunctionsCount = 0,
+  currentPage = 'shop',
+  onNavigate,
 }) => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isDeptMenuOpen, setIsDeptMenuOpen] = useState(false);
+  const [isSoundOn, setIsSoundOn] = useState(soundFx.isEnabled());
   const searchRef = useRef<HTMLDivElement>(null);
   const deptRef = useRef<HTMLDivElement>(null);
+
+  const toggleSound = () => {
+    const next = soundFx.toggle();
+    setIsSoundOn(next);
+    if (next) soundFx.playNotification();
+  };
 
   // Filter products for autocomplete
   const searchResults = searchQuery.trim().length > 0 
@@ -80,6 +117,23 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const getRoleBadge = () => {
+    if (!currentUser) return { label: 'Customer', icon: User, color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/20' };
+    switch (currentUser.role) {
+      case 'admin':
+        return { label: 'Admin', icon: Crown, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/30' };
+      case 'financial_analyst':
+        return { label: 'Analyst', icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/30' };
+      case 'inventory_manager':
+        return { label: 'Inventory', icon: Layers, color: 'text-cyan-400', bg: 'bg-cyan-500/10 border-cyan-500/30' };
+      default:
+        return { label: 'Customer', icon: User, color: 'text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/20' };
+    }
+  };
+
+  const roleInfo = getRoleBadge();
+  const RoleIcon = roleInfo.icon;
+
   return (
     <header className="sticky top-0 z-40 bg-[#0d0d11]/90 backdrop-blur-md border-b border-white/5 transition-all duration-200">
       {/* Top Notification & Live Status Bar */}
@@ -90,31 +144,81 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span className="tracking-wide">Live Inventory Sync</span>
+            <span className="tracking-wide">Pooja Store Live Inventory</span>
           </div>
           <span className="hidden md:inline text-slate-700">•</span>
           <span className="hidden md:inline text-slate-400">
-            Complimentary Insured Express Delivery on Orders Over $100
+            Instant Multi-Gateway Checkout (UPI, Cards, NetBanking) & Real-Time Profit Engine
           </span>
         </div>
 
-        <div className="flex items-center gap-4 text-xs font-medium">
+        <div className="flex items-center gap-3 text-xs font-medium">
+          
+          {/* Dynamic Role Login Switcher */}
+          <button
+            id="nav-role-switcher-btn"
+            onClick={onOpenRoleSwitcher}
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border ${roleInfo.bg} ${roleInfo.color} font-semibold transition hover:brightness-125 cursor-pointer`}
+            title="Switch Dynamic User Role"
+          >
+            <RoleIcon className="w-3 h-3" />
+            <span className="max-w-[120px] truncate">{currentUser ? currentUser.name.split(' ')[0] : 'Sign In'} ({roleInfo.label})</span>
+            <ChevronDown className="w-2.5 h-2.5 opacity-60" />
+          </button>
+
+          <span className="text-slate-800">|</span>
+
+          {/* Profit Analytics Drawer Trigger */}
+          <button
+            id="nav-profit-analytics-btn"
+            onClick={onOpenProfitAnalytics}
+            className="text-emerald-400 hover:text-emerald-300 transition flex items-center gap-1 cursor-pointer font-semibold"
+            title="Product Profitability & Margin Analytics"
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Profit Analysis</span>
+          </button>
+
+          <span className="text-slate-800">|</span>
+
+          {/* System Notifications & Malfunctions Center */}
+          <button
+            id="nav-notifications-btn"
+            onClick={onOpenNotifications}
+            className="relative text-slate-400 hover:text-white transition flex items-center gap-1 cursor-pointer"
+            title="Transaction Updates & System Alerts"
+          >
+            <Bell className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="hidden sm:inline">Alerts</span>
+            {(unreadNotificationsCount > 0 || activeMalfunctionsCount > 0) && (
+              <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold ${
+                activeMalfunctionsCount > 0 ? 'bg-rose-500 text-white animate-pulse' : 'bg-indigo-600 text-white'
+              }`}>
+                {activeMalfunctionsCount > 0 ? `! ${activeMalfunctionsCount}` : unreadNotificationsCount}
+              </span>
+            )}
+          </button>
+
+          <span className="text-slate-800">|</span>
+
           <button 
             id="nav-track-order-top"
             onClick={onOpenTracking}
             className="text-slate-400 hover:text-white transition flex items-center gap-1 cursor-pointer"
           >
             <PackageCheck className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Track Order</span>
+            <span className="hidden sm:inline">Orders</span>
           </button>
+          
           <span className="text-slate-800">|</span>
+
           <button 
             id="nav-admin-portal-top"
             onClick={onOpenAdmin}
             className="text-amber-400 hover:text-amber-300 transition flex items-center gap-1 cursor-pointer"
           >
             <Activity className="w-3.5 h-3.5" />
-            <span>Store Admin</span>
+            <span className="hidden sm:inline">Stock Control</span>
           </button>
         </div>
       </div>
@@ -130,18 +234,56 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={(e) => { e.preventDefault(); onSelectCategory('all'); }}
               className="flex items-center gap-3 group"
             >
-              <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/20 group-hover:bg-indigo-500 transition-all duration-200">
-                <div className="w-4 h-4 border-2 border-white rounded-xs"></div>
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-600/25 group-hover:scale-105 transition-all duration-200">
+                <span className="font-bold font-serif text-lg">P</span>
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xl tracking-tight text-white group-hover:text-indigo-300 transition-colors">
-                  CORE.STORE
+                  POOJA STORE
                 </span>
                 <span className="text-[9px] tracking-[0.2em] font-bold uppercase text-slate-500 -mt-1">
-                  ELEGANT COMMERCE
+                  ELEGANT COMMERCE & ANALYTICS
                 </span>
               </div>
             </a>
+
+            {/* Primary Page Navigation Links */}
+            {onNavigate && (
+              <nav className="hidden xl:flex items-center gap-1 bg-[#161b22] p-1 rounded-xl border border-white/5">
+                <button
+                  onClick={() => onNavigate('shop')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                    currentPage === 'shop'
+                      ? 'bg-amber-500 text-slate-950 font-bold shadow'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  Storefront
+                </button>
+                <button
+                  onClick={() => onNavigate('products_listing')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                    currentPage === 'products_listing'
+                      ? 'bg-amber-500 text-slate-950 font-bold shadow'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Package className="w-3.5 h-3.5" />
+                  <span>Product Directory</span>
+                </button>
+                <button
+                  onClick={() => onNavigate('products_deleting')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                    currentPage === 'products_deleting'
+                      ? 'bg-rose-500 text-white font-bold shadow'
+                      : 'text-rose-400/80 hover:text-rose-300 hover:bg-rose-500/10'
+                  }`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Deletion Hub</span>
+                </button>
+              </nav>
+            )}
 
             {/* Department Mega Dropdown */}
             <div className="relative hidden lg:block" ref={deptRef}>
@@ -198,7 +340,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
-                placeholder="Search inventory, hardware, audio, accessories..."
+                placeholder="Search inventory, audio, electronics, fashion, groceries..."
                 className="w-full pl-10 pr-10 py-2 bg-white/5 hover:bg-white/10 focus:bg-[#161b22] text-white placeholder:text-slate-600 rounded-full text-sm border border-white/10 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200 outline-none"
               />
               <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-2.5" />
@@ -276,7 +418,21 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 sm:gap-3">
-            
+
+            {/* Sound FX Toggle */}
+            <button
+              id="nav-sound-toggle-btn"
+              onClick={toggleSound}
+              className={`p-2.5 rounded-full border transition cursor-pointer ${
+                isSoundOn 
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' 
+                  : 'bg-white/5 text-slate-500 border-white/10 hover:text-slate-300'
+              }`}
+              title={isSoundOn ? 'Sound Effects Enabled' : 'Sound Effects Muted'}
+            >
+              {isSoundOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            </button>
+
             {/* AI Shopping Assistant Trigger */}
             <button
               id="nav-ai-assistant-btn"
@@ -287,6 +443,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
               <span className="hidden sm:inline">AI Concierge</span>
             </button>
+
+            {/* Sign In / Account Modal Trigger */}
+            {onOpenAuthModal && (
+              <button
+                id="nav-auth-modal-btn"
+                onClick={onOpenAuthModal}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold text-white bg-white/10 hover:bg-indigo-600 border border-white/15 hover:border-indigo-500 transition-all duration-150 cursor-pointer shadow-sm"
+                title="Sign In or Register Account"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{currentUser?.name ? 'Account' : 'Sign In'}</span>
+              </button>
+            )}
 
             {/* Cart Drawer Trigger */}
             <button

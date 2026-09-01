@@ -42,6 +42,95 @@ export interface Product {
   badges?: string[]; // e.g. "Bestseller", "Low Stock", "New Arrival", "Staff Pick"
   tags: string[];
   isFeatured?: boolean;
+  costPrice?: number; // COGS (Cost of Goods Sold)
+  unitsSold?: number;
+  supplier?: string;
+}
+
+export type UserRole = 'customer' | 'admin' | 'analyst' | 'inventory_manager';
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar: string;
+  department?: string;
+  phone?: string;
+  badge: string;
+  permissions: string[];
+  loyaltyPoints?: number;
+  memberSince?: string;
+  ordersCount?: number;
+  savedAddresses?: ShippingAddress[];
+}
+
+export interface ProductProfitAnalysis {
+  productId: string;
+  title: string;
+  brand: string;
+  category: string;
+  subcategory: string;
+  thumbnail: string;
+  price: number;
+  costPrice: number;
+  unitsSold: number;
+  stock: number;
+  totalRevenue: number;
+  totalCost: number;
+  grossProfit: number;
+  grossMarginPercent: number;
+  inventoryValue: number;
+  potentialProfit: number;
+  classification: 'star_performer' | 'cash_cow' | 'high_margin_gem' | 'low_margin_drag';
+  benefitScore: number; // 0 - 100
+  recommendation: string;
+  isBenefitingOverall: boolean;
+}
+
+export interface StoreProfitSummary {
+  totalRevenue: number;
+  totalCostOfGoods: number;
+  netGrossProfit: number;
+  averageMarginPercent: number;
+  totalUnitsSold: number;
+  topBenefitingProduct: ProductProfitAnalysis;
+  leastBenefitingProduct: ProductProfitAnalysis;
+  productAnalyses: ProductProfitAnalysis[];
+  categoryBreakdown: {
+    category: string;
+    categoryName: string;
+    revenue: number;
+    profit: number;
+    marginPercent: number;
+    unitsSold: number;
+  }[];
+}
+
+export type NotificationType = 'transaction' | 'stock_alert' | 'malfunction' | 'financial';
+export type NotificationSeverity = 'info' | 'warning' | 'critical' | 'success';
+
+export interface SystemNotification {
+  id: string;
+  type: NotificationType;
+  severity: NotificationSeverity;
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+  targetRole: 'all' | UserRole;
+  metadata?: {
+    orderId?: string;
+    orderNumber?: string;
+    productId?: string;
+    productTitle?: string;
+    amount?: number;
+    txId?: string;
+    errorCode?: string;
+    carrier?: string;
+    recoveryAction?: string;
+  };
+  isResolved?: boolean;
 }
 
 export interface SubCategory {
@@ -98,7 +187,20 @@ export interface ShippingOption {
   description: string;
 }
 
-export type PaymentType = 'card' | 'apple_pay' | 'google_pay' | 'paypal' | 'klarna';
+export type PaymentType = 'card' | 'upi' | 'netbanking' | 'apple_pay' | 'google_pay' | 'paypal' | 'cod' | 'klarna';
+
+export interface PaymentGatewayIntent {
+  intentId: string;
+  transactionId: string;
+  orderNumber: string;
+  amount: number;
+  currency: string;
+  gatewayProvider: 'RazorPay' | 'Stripe' | 'UPI-Direct' | 'HDFC-Bank';
+  status: 'created' | 'awaiting_payment' | 'authorized' | 'captured' | 'failed';
+  upiQrPayload?: string;
+  expiresAt: string;
+  challengeUrl?: string;
+}
 
 export interface PaymentDetails {
   type: PaymentType;
@@ -179,4 +281,31 @@ export interface StoreStats {
   lowStockCount: number;
   outOfStockCount: number;
   activeLiveShoppers: number;
+}
+
+export type PageView = 'shop' | 'products_listing' | 'products_deleting';
+
+export interface ArchivedProduct {
+  id: string;
+  originalProduct: Product;
+  deletedAt: string;
+  deletedBy: string;
+  reason: string;
+  previousStock: number;
+  previousPrice: number;
+  previousUnitsSold: number;
+}
+
+export interface ProductDeletionLog {
+  id: string;
+  productId: string;
+  productTitle: string;
+  sku: string;
+  category: string;
+  deletedAt: string;
+  deletedBy: string;
+  reason: string;
+  unitsRemoved: number;
+  estimatedValueLost: number;
+  action: 'archived' | 'restored' | 'purged';
 }

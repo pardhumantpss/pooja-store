@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Star, 
   ShoppingBag, 
@@ -7,9 +7,11 @@ import {
   Check, 
   AlertCircle, 
   Zap, 
-  ShieldCheck 
+  ShieldCheck,
+  Users
 } from 'lucide-react';
 import { Product } from '../types';
+import { soundFx } from '../lib/soundFx';
 
 interface ProductCardProps {
   product: Product;
@@ -30,6 +32,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [addedRecently, setAddedRecently] = useState(false);
 
+  // Stable live viewers count per product
+  const liveViewers = useMemo(() => {
+    const seed = product.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return 3 + (seed % 14);
+  }, [product.id]);
+
   const hasVariants = product.variants && product.variants.length > 0;
   const currentVariant = hasVariants ? product.variants![selectedVariantIndex] : null;
   const currentStock = currentVariant ? currentVariant.stock : product.stock;
@@ -43,6 +51,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isOutOfStock) return;
+    soundFx.playAddToCart();
     onAddToCart(product, currentVariant?.id);
     setAddedRecently(true);
     setTimeout(() => setAddedRecently(false), 1600);
@@ -92,7 +101,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
 
-        {/* Quick View Button on Hover */}
+        {/* Top Right Live Viewers Pill */}
+        <div className="absolute top-3 right-3 z-10">
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-black/60 backdrop-blur-md text-slate-300 border border-white/10 shadow-sm flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-mono font-bold text-white">{liveViewers}</span> viewing
+          </span>
+        </div>
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2 p-4">
           <button
             id={`quick-view-btn-${product.id}`}
